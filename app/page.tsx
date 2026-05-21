@@ -1,14 +1,7 @@
-// app/page.tsx
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { QueryClient, QueryClientProvider, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Toaster, toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Eye, EyeOff, Loader2, LogOut, Printer, RefreshCw } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 
@@ -84,37 +77,38 @@ function LoginScreen({ onLogin }: { onLogin: (u: any) => void }) {
         </div>
 
         <div className="space-y-4">
-          <Select value={username} onValueChange={setUsername}>
-            <SelectTrigger>
-              <SelectValue placeholder="اختر المستخدم" />
-            </SelectTrigger>
-            <SelectContent>
-              {users.map(u => (
-                <SelectItem key={u.id} value={u.username}>{u.name} - {u.username}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <select 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full border p-2 rounded"
+          >
+            <option value="">اختر المستخدم</option>
+            {users.map(u => (
+              <option key={u.id} value={u.username}>{u.name} - {u.username}</option>
+            ))}
+          </select>
 
           <div className="relative">
-            <Input
+            <input
               type={showPass ? 'text' : 'password'}
               placeholder="كلمة المرور"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="w-full border p-2 rounded pr-10"
             />
             <button type="button" onClick={() => setShowPass(!showPass)} className="absolute left-3 top-2.5">
               {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
-          <Button 
-            className="w-full" 
+          <button 
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50" 
             disabled={loginMutation.isPending}
             onClick={() => loginMutation.mutate({ username, password })}
           >
-            {loginMutation.isPending && <Loader2 className="animate-spin ml-2" size={16} />}
+            {loginMutation.isPending && <Loader2 className="animate-spin inline ml-2" size={16} />}
             تسجيل الدخول
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -125,6 +119,7 @@ function LoginScreen({ onLogin }: { onLogin: (u: any) => void }) {
 function Dashboard({ user, onLogout }: { user: any, onLogout: () => void }) {
   const printRef = useRef(null)
   const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState('operations')
 
   const handlePrint = useReactToPrint({ content: () => printRef.current })
   
@@ -143,44 +138,50 @@ function Dashboard({ user, onLogout }: { user: any, onLogout: () => void }) {
           </span>
           <span className="font-medium">{user.name}</span>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
-          <LogOut size={16} className="ml-2" />
+        <button className="px-3 py-1 text-sm hover:bg-gray-100 rounded" onClick={() => logoutMutation.mutate()}>
+          <LogOut size={16} className="inline ml-2" />
           خروج
-        </Button>
+        </button>
       </header>
 
       {/* Tabs */}
-      <Tabs defaultValue="operations" className="flex-1 flex-col">
+      <div className="flex-1 flex-col">
         <div className="border-b px-6 bg-white">
-          <TabsList>
-            <TabsTrigger value="employees">إدارة الموظفين</TabsTrigger>
-            <TabsTrigger value="operations">العمليات</TabsTrigger>
-          </TabsList>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setActiveTab('employees')}
+              className={`px-4 py-2 ${activeTab === 'employees' ? 'border-b-2 border-blue-600' : ''}`}
+            >
+              إدارة الموظفين
+            </button>
+            <button 
+              onClick={() => setActiveTab('operations')}
+              className={`px-4 py-2 ${activeTab === 'operations' ? 'border-b-2 border-blue-600' : ''}`}
+            >
+              العمليات
+            </button>
+          </div>
         </div>
 
         <main className="flex-1 p-6 bg-gray-50 overflow-auto">
           <div ref={printRef}>
-            <TabsContent value="employees">
-              <EmployeesTab />
-            </TabsContent>
-            <TabsContent value="operations">
-              <OperationsTab />
-            </TabsContent>
+            {activeTab === 'employees' && <EmployeesTab />}
+            {activeTab === 'operations' && <OperationsTab />}
           </div>
         </main>
 
         {/* Footer */}
         <footer className="border-t px-6 py-3 flex items-center gap-3 bg-white">
-          <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries()}>
-            <RefreshCw size={16} className="ml-2" />
+          <button className="px-3 py-1 border rounded text-sm" onClick={() => queryClient.invalidateQueries()}>
+            <RefreshCw size={16} className="inline ml-2" />
             تحديث
-          </Button>
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer size={16} className="ml-2" />
+          </button>
+          <button className="px-3 py-1 border rounded text-sm" onClick={handlePrint}>
+            <Printer size={16} className="inline ml-2" />
             طباعة
-          </Button>
+          </button>
         </footer>
-      </Tabs>
+      </div>
     </div>
   )
 }
@@ -190,15 +191,23 @@ function EmployeesTab() {
   const [activeTab, setActiveTab] = useState('add')
   return (
     <div>
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="add">إضافة موظف</TabsTrigger>
-          <TabsTrigger value="manage">تعديل/إيقاف/حذف</TabsTrigger>
-        </TabsList>
+      <div className="flex gap-2 mb-4 border-b">
+        <button 
+          onClick={() => setActiveTab('add')}
+          className={`px-4 py-2 ${activeTab === 'add' ? 'border-b-2 border-blue-600' : ''}`}
+        >
+          إضافة موظف
+        </button>
+        <button 
+          onClick={() => setActiveTab('manage')}
+          className={`px-4 py-2 ${activeTab === 'manage' ? 'border-b-2 border-blue-600' : ''}`}
+        >
+          تعديل/إيقاف/حذف
+        </button>
+      </div>
         
-        <TabsContent value="add"><AddEmployeeForm /></TabsContent>
-        <TabsContent value="manage"><ManageEmployees /></TabsContent>
-      </Tabs>
+      {activeTab === 'add' && <AddEmployeeForm />}
+      {activeTab === 'manage' && <ManageEmployees />}
     </div>
   )
 }
@@ -227,36 +236,30 @@ function AddEmployeeForm() {
 
   return (
     <div className="max-w-md space-y-4 bg-white p-6 rounded-lg">
-      <Input placeholder="اسم الموظف" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-      <Input placeholder="اسم المستخدم" value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
-      <Input type="password" placeholder="كلمة المرور" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+      <input placeholder="اسم الموظف" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border p-2 rounded" />
+      <input placeholder="اسم المستخدم" value={form.username} onChange={e => setForm({...form, username: e.target.value})} className="w-full border p-2 rounded" />
+      <input type="password" placeholder="كلمة المرور" value={form.password} onChange={e => setForm({...form, password: e.target.value})} className="w-full border p-2 rounded" />
       
-      <Select value={form.branch_id} onValueChange={v => setForm({...form, branch_id: v})}>
-        <SelectTrigger><SelectValue placeholder="اختر الفرع" /></SelectTrigger>
-        <SelectContent>
-          {branches?.map((b: any) => <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <select value={form.branch_id} onChange={e => setForm({...form, branch_id: e.target.value})} className="w-full border p-2 rounded">
+        <option value="">اختر الفرع</option>
+        {branches?.map((b: any) => <option key={b.id} value={b.id.toString()}>{b.name}</option>)}
+      </select>
 
-      <Select value={form.role} onValueChange={v => setForm({...form, role: v})}>
-        <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="مدير عام">مدير عام</SelectItem>
-          <SelectItem value="مدير">مدير</SelectItem>
-          <SelectItem value="موظف">موظف</SelectItem>
-        </SelectContent>
-      </Select>
+      <select value={form.role} onChange={e => setForm({...form, role: e.target.value})} className="w-full border p-2 rounded">
+        <option value="مدير عام">مدير عام</option>
+        <option value="مدير">مدير</option>
+        <option value="موظف">موظف</option>
+      </select>
 
-      <Button onClick={() => mutation.mutate(form)} disabled={mutation.isPending}>
+      <button onClick={() => mutation.mutate(form)} disabled={mutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
         حفظ
-      </Button>
+      </button>
     </div>
   )
 }
 
 function ManageEmployees() {
   const [selectedUser, setSelectedUser] = useState<any>(null)
-  const [showEdit, setShowEdit] = useState(false)
   const [showDeactivate, setShowDeactivate] = useState(false)
   const [reason, setReason] = useState('')
   const queryClient = useQueryClient()
@@ -286,67 +289,68 @@ function ManageEmployees() {
 
   return (
     <div className="space-y-4">
-      <Select onValueChange={v => setSelectedUser(employees?.find((e: any) => e.id.toString() === v))}>
-        <SelectTrigger className="max-w-md">
-          <SelectValue placeholder="اختر الموظف" />
-        </SelectTrigger>
-        <SelectContent>
-          {employees?.map((e: any) => (
-            <SelectItem key={e.id} value={e.id.toString()}>{e.name} - {e.status}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <select onChange={e => setSelectedUser(employees?.find((e: any) => e.id.toString() === e.target.value))} className="max-w-md w-full border p-2 rounded">
+        <option value="">اختر الموظف</option>
+        {employees?.map((e: any) => (
+          <option key={e.id} value={e.id.toString()}>{e.name} - {e.status}</option>
+        ))}
+      </select>
 
       {selectedUser && (
         <div className="flex gap-2">
-          <Button onClick={() => setShowEdit(true)}>تعديل</Button>
-          <Button 
-            variant={selectedUser.status === 'نشط' ? 'destructive' : 'default'}
+          <button className="px-4 py-2 border rounded">تعديل</button>
+          <button 
+            className={`px-4 py-2 rounded text-white ${selectedUser.status === 'نشط' ? 'bg-red-600' : 'bg-green-600'}`}
             onClick={() => setShowDeactivate(true)}
           >
             {selectedUser.status === 'نشط' ? 'إيقاف' : 'إلغاء الإيقاف'}
-          </Button>
-          <Button variant="destructive" onClick={() => {
+          </button>
+          <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={() => {
             if (confirm('هل أنت متأكد من الحذف؟')) deleteMutation.mutate(selectedUser.id)
           }}>
             حذف
-          </Button>
+          </button>
         </div>
       )}
 
-      <Dialog open={showDeactivate} onOpenChange={setShowDeactivate}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>سبب الإيقاف</DialogTitle>
-          </DialogHeader>
-          <Input placeholder="اكتب السبب" value={reason} onChange={e => setReason(e.target.value)} />
-          <DialogFooter>
-            <Button onClick={() => toggleStatusMutation.mutate({ id: selectedUser?.id, reason })}>
-              تأكيد
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {showDeactivate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded max-w-md w-full">
+            <h2 className="text-lg font-bold mb-4">سبب الإيقاف</h2>
+            <input placeholder="اكتب السبب" value={reason} onChange={e => setReason(e.target.value)} className="w-full border p-2 rounded mb-4" />
+            <div className="flex gap-2">
+              <button onClick={() => toggleStatusMutation.mutate({ id: selectedUser?.id, reason })} className="px-4 py-2 bg-blue-600 text-white rounded">
+                تأكيد
+              </button>
+              <button onClick={() => setShowDeactivate(false)} className="px-4 py-2 border rounded">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // ===== Operations Tab =====
 function OperationsTab() {
+  const [activeTab, setActiveTab] = useState('buy')
+  
   return (
-    <Tabs defaultValue="buy">
-      <TabsList className="mb-4">
-        <TabsTrigger value="buy">شراء</TabsTrigger>
-        <TabsTrigger value="sell">بيع</TabsTrigger>
-        <TabsTrigger value="deposit">إيداع</TabsTrigger>
-        <TabsTrigger value="withdrawal">صرف</TabsTrigger>
-      </TabsList>
+    <div>
+      <div className="flex gap-2 mb-4 border-b">
+        <button onClick={() => setActiveTab('buy')} className={`px-4 py-2 ${activeTab === 'buy' ? 'border-b-2 border-blue-600' : ''}`}>شراء</button>
+        <button onClick={() => setActiveTab('sell')} className={`px-4 py-2 ${activeTab === 'sell' ? 'border-b-2 border-blue-600' : ''}`}>بيع</button>
+        <button onClick={() => setActiveTab('deposit')} className={`px-4 py-2 ${activeTab === 'deposit' ? 'border-b-2 border-blue-600' : ''}`}>إيداع</button>
+        <button onClick={() => setActiveTab('withdrawal')} className={`px-4 py-2 ${activeTab === 'withdrawal' ? 'border-b-2 border-blue-600' : ''}`}>صرف</button>
+      </div>
 
-      <TabsContent value="buy"><ExchangeForm type="شراء" /></TabsContent>
-      <TabsContent value="sell"><ExchangeForm type="بيع" /></TabsContent>
-      <TabsContent value="deposit"><DepositForm /></TabsContent>
-      <TabsContent value="withdrawal"><WithdrawalForm /></TabsContent>
-    </Tabs>
+      {activeTab === 'buy' && <ExchangeForm type="شراء" />}
+      {activeTab === 'sell' && <ExchangeForm type="بيع" />}
+      {activeTab === 'deposit' && <DepositForm />}
+      {activeTab === 'withdrawal' && <WithdrawalForm />}
+    </div>
   )
 }
 
@@ -408,32 +412,31 @@ function ExchangeForm({ type }: { type: 'شراء' | 'بيع' }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4">
-        <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {currencies?.map((c: any) => <SelectItem key={c.code} value={c.code}>{c.code}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} className="border p-2 rounded">
+          {currencies?.map((c: any) => <option key={c.code} value={c.code}>{c.code}</option>)}
+        </select>
         
-        <Input 
+        <input 
           type="number" 
           placeholder="المبلغ" 
           value={form.amount} 
-          onChange={e => setForm({...form, amount: e.target.value})} 
+          onChange={e => setForm({...form, amount: e.target.value})}
+          className="border p-2 rounded" 
         />
         
-        <Input 
+        <input 
           type="number" 
           placeholder="السعر" 
           value={form.rate}
           onChange={e => setForm({...form, rate: e.target.value})}
           onBlur={e => validateRate(parseFloat(e.target.value))}
+          className="border p-2 rounded"
         />
       </div>
 
-      <Input readOnly value={result} placeholder="النتيجة" />
+      <input readOnly value={result} placeholder="النتيجة" className="border p-2 rounded w-full bg-gray-100" />
       
-      <Button 
+      <button 
         onClick={() => mutation.mutate({
           uuid: crypto.randomUUID(),
           type,
@@ -444,9 +447,10 @@ function ExchangeForm({ type }: { type: 'شراء' | 'بيع' }) {
           branch_id: 1
         })}
         disabled={mutation.isPending || !form.amount || !form.rate}
+        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
       >
         تنفيذ {type}
-      </Button>
+      </button>
 
       <div className="mt-6">
         <h3 className="font-bold mb-2">سجل العمليات</h3>
@@ -480,36 +484,31 @@ function DepositForm() {
 
   return (
     <div className="space-y-4">
-      <Select value={form.account_id} onValueChange={v => setForm({...form, account_id: v})}>
-        <SelectTrigger><SelectValue placeholder="اختر الحساب" /></SelectTrigger>
-        <SelectContent>
-          {accounts?.map((a: any) => <SelectItem key={a.id} value={a.id.toString()}>{a.name} - {a.account_number}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <select value={form.account_id} onChange={e => setForm({...form, account_id: e.target.value})} className="w-full border p-2 rounded">
+        <option value="">اختر الحساب</option>
+        {accounts?.map((a: any) => <option key={a.id} value={a.id.toString()}>{a.name} - {a.account_number}</option>)}
+      </select>
 
       <div className="grid grid-cols-2 gap-4">
-        <Input type="number" placeholder="المبلغ" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} />
-        <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="YER">YER</SelectItem>
-            <SelectItem value="USD">USD</SelectItem>
-            <SelectItem value="SAR">SAR</SelectItem>
-          </SelectContent>
-        </Select>
+        <input type="number" placeholder="المبلغ" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="border p-2 rounded" />
+        <select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} className="border p-2 rounded">
+          <option value="YER">YER</option>
+          <option value="USD">USD</option>
+          <option value="SAR">SAR</option>
+        </select>
       </div>
 
-      <Input placeholder="اسم المودع" value={form.depositor_name} onChange={e => setForm({...form, depositor_name: e.target.value})} />
-      <Input placeholder="ملاحظات" value={form.note} onChange={e => setForm({...form, note: e.target.value})} />
+      <input placeholder="اسم المودع" value={form.depositor_name} onChange={e => setForm({...form, depositor_name: e.target.value})} className="w-full border p-2 rounded" />
+      <input placeholder="ملاحظات" value={form.note} onChange={e => setForm({...form, note: e.target.value})} className="w-full border p-2 rounded" />
 
-      <Button onClick={() => mutation.mutate({
+      <button onClick={() => mutation.mutate({
         uuid: crypto.randomUUID(),
         ...form,
         amount: parseFloat(form.amount),
         account_id: parseInt(form.account_id)
-      })}>
+      })} className="px-4 py-2 bg-blue-600 text-white rounded">
         تنفيذ إيداع
-      </Button>
+      </button>
 
       <div className="mt-6">
         <h3 className="font-bold mb-2">سجل الإيداعات</h3>
@@ -544,36 +543,31 @@ function WithdrawalForm() {
 
   return (
     <div className="space-y-4">
-      <Select value={form.account_id} onValueChange={v => setForm({...form, account_id: v})}>
-        <SelectTrigger><SelectValue placeholder="اختر الحساب" /></SelectTrigger>
-        <SelectContent>
-          {accounts?.map((a: any) => <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <select value={form.account_id} onChange={e => setForm({...form, account_id: e.target.value})} className="w-full border p-2 rounded">
+        <option value="">اختر الحساب</option>
+        {accounts?.map((a: any) => <option key={a.id} value={a.id.toString()}>{a.name}</option>)}
+      </select>
 
       <div className="grid grid-cols-2 gap-4">
-        <Input type="number" placeholder="المبلغ" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} />
-        <Select value={form.currency} onValueChange={v => setForm({...form, currency: v})}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="YER">YER</SelectItem>
-            <SelectItem value="USD">USD</SelectItem>
-            <SelectItem value="SAR">SAR</SelectItem>
-          </SelectContent>
-        </Select>
+        <input type="number" placeholder="المبلغ" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} className="border p-2 rounded" />
+        <select value={form.currency} onChange={e => setForm({...form, currency: e.target.value})} className="border p-2 rounded">
+          <option value="YER">YER</option>
+          <option value="USD">USD</option>
+          <option value="SAR">SAR</option>
+        </select>
       </div>
 
-      <Input placeholder="اسم المستلم" value={form.receiver_name} onChange={e => setForm({...form, receiver_name: e.target.value})} />
-      <Input placeholder="ملاحظات" value={form.note} onChange={e => setForm({...form, note: e.target.value})} />
+      <input placeholder="اسم المستلم" value={form.receiver_name} onChange={e => setForm({...form, receiver_name: e.target.value})} className="w-full border p-2 rounded" />
+      <input placeholder="ملاحظات" value={form.note} onChange={e => setForm({...form, note: e.target.value})} className="w-full border p-2 rounded" />
 
-      <Button onClick={() => mutation.mutate({
+      <button onClick={() => mutation.mutate({
         uuid: crypto.randomUUID(),
         ...form,
         amount: parseFloat(form.amount),
         account_id: parseInt(form.account_id)
-      })}>
+      })} className="px-4 py-2 bg-blue-600 text-white rounded">
         تنفيذ صرف
-      </Button>
+      </button>
 
       <div className="mt-6">
         <h3 className="font-bold mb-2">سجل الصرف</h3>
@@ -592,35 +586,35 @@ function TransactionsTable({ type }: { type?: string }) {
   if (isLoading) return <div>جار التحميل...</div>
 
   return (
-    <div className="border rounded-lg bg-white" data-print="true">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>رقم العملية</TableHead>
-            <TableHead>المبلغ</TableHead>
-            <TableHead>العملة</TableHead>
-            <TableHead>السعر</TableHead>
-            <TableHead>النتيجة</TableHead>
-            <TableHead>العملية</TableHead>
-            <TableHead>الحالة</TableHead>
-            <TableHead>التاريخ</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="border rounded-lg bg-white overflow-x-auto" data-print="true">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="p-2 text-right">رقم العملية</th>
+            <th className="p-2 text-right">المبلغ</th>
+            <th className="p-2 text-right">العملة</th>
+            <th className="p-2 text-right">السعر</th>
+            <th className="p-2 text-right">النتيجة</th>
+            <th className="p-2 text-right">العملية</th>
+            <th className="p-2 text-right">الحالة</th>
+            <th className="p-2 text-right">التاريخ</th>
+          </tr>
+        </thead>
+        <tbody>
           {data?.map((tx: any) => (
-            <TableRow key={tx.id}>
-              <TableCell>{tx.tx_number}</TableCell>
-              <TableCell>{tx.amount}</TableCell>
-              <TableCell>{tx.currency}</TableCell>
-              <TableCell>{tx.rate}</TableCell>
-              <TableCell>{tx.result_amount}</TableCell>
-              <TableCell>{tx.type}</TableCell>
-              <TableCell>{tx.status}</TableCell>
-              <TableCell>{new Date(tx.created_at).toLocaleString('ar-SA')}</TableCell>
-            </TableRow>
+            <tr key={tx.id} className="border-t">
+              <td className="p-2">{tx.tx_number}</td>
+              <td className="p-2">{tx.amount}</td>
+              <td className="p-2">{tx.currency}</td>
+              <td className="p-2">{tx.rate}</td>
+              <td className="p-2">{tx.result_amount}</td>
+              <td className="p-2">{tx.type}</td>
+              <td className="p-2">{tx.status}</td>
+              <td className="p-2">{new Date(tx.created_at).toLocaleString('ar-SA')}</td>
+            </tr>
           ))}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   )
 }
